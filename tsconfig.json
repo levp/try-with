@@ -1,0 +1,23 @@
+{
+	"compilerOptions": {
+		"moduleResolution": "node",
+		"module": "commonjs",
+		"outDir": "./dist/",
+		"target": "es2015",
+		"sourceMap": true,
+		"declaration": true,
+		"noImplicitAny": true,
+		"noUnusedLocals": true,
+		"noImplicitThis": true,
+		"strictNullChecks": true,
+		"noImplicitReturns": true,
+		"noUnusedParameters": true,
+		"strictFunctionTypes": true,
+		"noFallthroughCasesInSwitch": true,
+		"strictPropertyInitialization": true,
+		"forceConsistentCasingInFileNames": true
+	},
+	"include": [
+		"./src/**/*.ts"
+	]
+}
