@@ -176,9 +176,31 @@ describe('try-with', () => {
 			assert.strictEqual(executed, true);
 			assert.strictEqual(disposed, true);
 		});
+
+		it('ensure original error is kept', () => {
+			const msg = 'abc123';
+			let error;
+			try {
+				tryWith(null, () => {
+					throw msg;
+				});
+			} catch (thrown) {
+				error = thrown;
+			}
+			assert.strictEqual(error, msg);
+		});
+
 	});
 	///////////////////////////////////////////////////////////////////////////
 	describe('edge cases', () => {
+		it('throw if argument is not a function', () => {
+			assert.throws(() => {
+				tryWith(0, {});
+				tryWith(0, null);
+				tryWith(0, undefined);
+			});
+		});
+
 		it('non-objects (primitives) as values', () => {
 			tryWith(0, noop);
 			tryWith(1, noop);
