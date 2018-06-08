@@ -9,28 +9,34 @@ Similar concepts - [try-with-resource](https://docs.oracle.com/javase/tutorial/e
 
 A potential resource leak due to stream not being closed:
 
-	const stream = fs.createWriteStream(filePath);
-	stream.write(data); // will thrown an error if data is incorrect value, e.g. null
-	stream.close();
+```js
+const stream = fs.createWriteStream(filePath);
+stream.write(data); // will thrown an error if data is incorrect value, e.g. null
+stream.close();
+```
 
 A safe variant of the above code:
 
-	let stream;
-	try {
-	  stream = fs.createWriteStream(filePath);
-	  stream.write(data);
-	} finally {
-	  if (stream) {
-	    stream.close();
-	  }
-	}
+```js
+let stream;
+try {
+  stream = fs.createWriteStream(filePath);
+  stream.write(data);
+} finally {
+  if (stream) {
+    stream.close();
+  }
+}
+```
 
 Functionally equivalent to the code above but using `try-with`:
 
-	tryWith(fs.createWriteStream(filePath), stream => {
-	  stream.write(data);
-	});
-	
+```js
+tryWith(fs.createWriteStream(filePath), stream => {
+  stream.write(data);
+});
+```
+
 ## API
 
 `tryWith(object, action, [cleanupMethodOrName])`
