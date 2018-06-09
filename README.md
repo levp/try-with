@@ -42,15 +42,20 @@ tryWith(fs.createWriteStream(filePath), stream => {
 `tryWith(object, action, [cleanupMethodOrName])`
 
 1. Invokes `action`, passing `object` to it as a parameter.
-2. After action is finished perform cleanup:  
+2. After action is finished try to perform cleanup:  
 	1. If third argument was omitted:  
 		1. If `dispose` property exists on `object`, try to invoke it.  
 		2. Else if `close` property exists on `object`, try to invoke it.  
-	2. Else If third argument was specified and is a function, invoke it and pass `object` to it as a paramter.
-	3. Else (third argument was specified but is not a function):
+	2. Else If third argument was provided and is a function, invoke it and pass `object` to it as a paramter.
+	3. Else (third argument was provided but is not a function):
 		1. If it is a string or a symbol, try to invoke a property with that key on `object`.
 		2. Else convert third argument to string and try to invoke a property with that key on `object`.
 3. If an error was thrown when `action` was invoked, rethrow it.
+
+## Building and Testing
+
+`npm run build` or `npm run watch` to compile TypeScript.  
+`npm test` to run tests, make sure to compile before doing so.
 
 ## License
 ISC
