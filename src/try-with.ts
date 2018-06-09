@@ -1,94 +1,92 @@
 ///////////////////////////////////////////////////////////
-/// Required type definitions.
+/// Required type definitions
 ///////////////////////////////////////////////////////////
 
-export const DISPOSE_METHOD = 'dispose';
-export const CLOSE_METHOD = 'close';
-
-export interface Disposable {
-	[DISPOSE_METHOD](): void;
+interface Disposable {
+	dispose(): void;
 }
 
-export interface Closeable {
-	[CLOSE_METHOD](): void;
+interface Closeable {
+	close(): void;
 }
 
-export type Action<T> = (object: T) => void;
+type Action<T> = (object: T) => void;
 
-export type CleanupFunction<T> = (object: T) => void;
+type CleanupFunction<T> = (object: T) => void;
 
 ///////////////////////////////////////////////////////////
-/// Main implementation with overload resolution.
+/// Main implementation
 ///////////////////////////////////////////////////////////
 
-export function tryWith<T extends Disposable | Closeable>(object: T, action: Action<T>): void;
+export = tryWith;
 
-export function tryWith<T>(object: T, action: Action<T>, cleanupFunction: CleanupFunction<T>): void;
+function tryWith<T extends Disposable | Closeable>(object: T, action: Action<T>): void;
 
-export function tryWith<T>(object: T, action: Action<T>, cleanupProperty: string | symbol): void;
+function tryWith<T>(object: T, action: Action<T>, cleanupFunction: CleanupFunction<T>): void;
 
-export function tryWith<T>(object: T, action: Action<T>, cleanupMethodOrName?: any): void {
-	const cleanup = resolveDispose(object, cleanupMethodOrName, arguments.length < 3);
+function tryWith<T>(object: T, action: Action<T>, cleanupProperty: string | symbol): void;
 
+function tryWith<T>(object: T, action: Action<T>, cleanupFnOrMethodName?: any): void {
 	try {
 		action(object);
 	} finally {
-		disposeOf(object, cleanup);
+		// todo: separate arguments.length < 3 and >= 3 into separate functions that resolve the cleanup
+		const cleanup = resolveCleanup(object, cleanupFnOrMethodName, arguments.length < 3);
+		performCleanup(object, cleanup);
 	}
 }
 
-function getCleanupMethodName(object: any): typeof DISPOSE_METHOD | typeof CLOSE_METHOD | null {
-	if (typeof object[DISPOSE_METHOD] === 'function') {
-		return DISPOSE_METHOD;
+///////////////////////////////////////////////////////////
+/// Helpers
+///////////////////////////////////////////////////////////
+
+function findBuiltInCleanupMethodName(object: any): 'dispose' | 'close' | null {
+	if (typeof object.dispose === 'function') {
+		return 'dispose';
 	}
-	if (typeof object[CLOSE_METHOD] === 'function') {
-		return CLOSE_METHOD;
+	if (typeof object.close === 'function') {
+		return 'close';
 	}
 	return null;
 }
 
-function resolveDispose(obj: any, disposeOrMethodName: any, tryResolveProperty: boolean): CleanupFunction<any> | string | symbol | null {
+function resolveCleanup(obj: any, cleanupFnOrMethodName: any, tryResolveProperty: boolean): CleanupFunction<any> | string | symbol | null {
 	if (obj === null || obj === void 0) {
 		return null;
 	}
 
-	const type = typeof disposeOrMethodName;
+	const type = typeof cleanupFnOrMethodName;
 
 	if (type === 'function') {
-		return disposeOrMethodName;
+		return cleanupFnOrMethodName;
 	}
 
-	if (disposeOrMethodName !== void 0) {
+	if (cleanupFnOrMethodName !== void 0) {
 		if (type === 'symbol') {
-			return disposeOrMethodName;
+			return cleanupFnOrMethodName;
 		}
 		if (type === 'string') {
-			return disposeOrMethodName;
+			return cleanupFnOrMethodName;
 		}
 	}
 
 	if (tryResolveProperty) {
-		return getCleanupMethodName(obj);
+		return findBuiltInCleanupMethodName(obj);
 	}
 
 	return null;
 }
 
-///////////////////////////////////////////////////////////
-/// Utilities
-///////////////////////////////////////////////////////////
-
-function disposeOf<T>(object: T, disposeOrMethodName: CleanupFunction<T> | string | symbol | null): void {
-	switch (typeof disposeOrMethodName) {
+function performCleanup<T>(object: T, cleanupFnOrMethodName: CleanupFunction<T> | string | symbol | null): void {
+	switch (typeof cleanupFnOrMethodName) {
 		case 'symbol':
 		case 'string':
-			// todo: Remove ugly, duplicate type assertions.
-			if (typeof (object as any)[(disposeOrMethodName as string | symbol)] === 'function') {
-				(object as any)[(disposeOrMethodName as string | symbol)]();
+			if (typeof object[cleanupFnOrMethodName as any] === 'function') {
+				object[cleanupFnOrMethodName as any]();
 			}
 			break;
 		case 'function':
-			(disposeOrMethodName as CleanupFunction<T>)(object);
+			(cleanupFnOrMethodName as CleanupFunction<T>)(object);
 			break;
 	}
 }
