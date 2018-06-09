@@ -1,3 +1,5 @@
+[![Build Status](https://travis-ci.org/levp/try-with.svg?branch=master)](https://travis-ci.org/levp/try-with)
+
 # try-with
 
 **A utility for safe and convenient handling of managed resources in JavasScript.**
