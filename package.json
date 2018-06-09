@@ -1,16 +1,30 @@
 {
   "name": "try-with",
   "version": "0.1.1",
+  "author": "Levi Perelman",
+  "license": "ISC",
   "scripts": {
     "build": "tsc",
     "watch": "tsc -w",
     "test": "mocha test"
   },
-  "author": "Levi Perelman",
-  "license": "ISC",
+  "keywords": [
+    "disposable",
+    "exception",
+    "utility",
+    "error"
+  ],
   "devDependencies": {
     "@types/node": "^10.3.1",
     "mocha": "^5.2.0",
     "typescript": "^2.9.1"
-  }
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/levp/try-with.git"
+  },
+  "bugs": {
+    "url": "https://github.com/levp/try-with/issues"
+  },
+  "homepage": "https://github.com/levp/try-with#readme"
 }
