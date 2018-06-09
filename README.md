@@ -20,14 +20,11 @@ stream.close();
 A safe variant of the above code:
 
 ```js
-let stream;
+const stream = fs.createWriteStream(filePath);
 try {
-  stream = fs.createWriteStream(filePath);
   stream.write(data);
 } finally {
-  if (stream) {
-    stream.close();
-  }
+  stream.close();
 }
 ```
 
