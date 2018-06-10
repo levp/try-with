@@ -5,20 +5,10 @@ const path = require('path');
 const fs = require('fs');
 const child_process = require('child_process');
 
-/*(function() {
-	var childProcess = require("child_process");
-	var oldSpawn = childProcess.spawn;
-	function mySpawn() {
-		console.log('spawn called');
-		console.log(arguments);
-		var result = oldSpawn.apply(this, arguments);
-		return result;
-	}
-	childProcess.spawn = mySpawn;
-})();*/
-
 // Configuration
-const DIST_DIR = path.join(__dirname, './dist/');
+const ROOT_DIR = __dirname;
+const DIST_DIR = path.join(ROOT_DIR, './dist/');
+const NPM_COMMAND = osIsWindows() ? 'npm.cmd' : 'npm';
 
 ///////////////////////////////////////////////////////////
 // Publish
@@ -36,8 +26,35 @@ const fixedPkg = JSON.stringify(originalPkg, null, 2);
 // Create fixed `package.json` in the dist directory.
 fs.writeFileSync(path.join(DIST_DIR, './package.json'), fixedPkg);
 
-const npmCommand = osIsWindows() ? 'npm.cmd' : 'npm';
-child_process.spawn(npmCommand, ['publish'], {cwd: DIST_DIR, stdio: 'inherit'});
+console.log('Spawning build process . . .');
+const buildProcess = spawnBuildProcess();
+buildProcess.on('close', code => {
+	if (code !== 0) {
+		console.log(`ERROR! Build process could not complete, exited with error code ${code}.`);
+		return;
+	}
+	console.log('Build process finished successfully, spawning publish process . . .');
+
+	spawnPublishDistProcess();
+});
+
+///////////////////////////////////////////////////////////
+// Spawning
+///////////////////////////////////////////////////////////
+
+function spawnBuildProcess() {
+	return child_process.spawn(NPM_COMMAND, ['run', 'build'], {
+		cwd: ROOT_DIR,
+		stdio: 'inherit',
+	});
+}
+
+function spawnPublishDistProcess() {
+	return child_process.spawn(NPM_COMMAND, ['publish'], {
+		cwd: DIST_DIR,
+		stdio: 'inherit',
+	});
+}
 
 ///////////////////////////////////////////////////////////
 // Utilities
