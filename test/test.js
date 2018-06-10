@@ -120,7 +120,65 @@ describe('try-with', () => {
 			}
 			eq(error, msg);
 		});
+	});
+	///////////////////////////////////////////////////////////////////////////
+	describe('misc', () => {
+		it('correct action argument', () => {
+			let o = {};
+			tryWith(o, (object) => eq(o, object));
+			o = 5;
+			tryWith(o, (object) => eq(o, object));
+			o = null;
+			tryWith(o, (object) => eq(o, object));
+			o = undefined;
+			tryWith(o, (object) => eq(o, object));
+		});
 
+		it('correct argument in custom cleanup function', () => {
+			let o = {};
+			tryWith(o, noop, (object) => eq(o, object));
+			o = 5;
+			tryWith(o, noop, (object) => eq(o, object));
+			o = null;
+			tryWith(o, noop, (object) => eq(o, object));
+			o = undefined;
+			tryWith(o, noop, (object) => eq(o, object));
+		});
+
+		it('correct `this` in dispose/close', () => {
+			let objDispose = {
+				isDisposed: false,
+				dispose() {
+					eq(this, objDispose);
+					this.isDisposed = true;
+				}
+			};
+			tryWith(objDispose, noop);
+			eq(objDispose.isDisposed, true);
+
+			let objClose = {
+				isClosed: false,
+				close() {
+					eq(this, objClose);
+					this.isClosed = true;
+				}
+			};
+			tryWith(objClose, noop);
+			eq(objClose.isClosed, true);
+		});
+
+		it('correct `this` in custom cleanup function', () => {
+			const cleanupFnName = 'cleanStuffUp@!#';
+			let isCleaned = false;
+			let o = {
+				[cleanupFnName]() {
+					eq(this, o);
+					isCleaned = true;
+				}
+			};
+			tryWith(o, noop, cleanupFnName);
+			eq(isCleaned, true);
+		});
 	});
 	///////////////////////////////////////////////////////////////////////////
 	describe('edge cases', () => {
