@@ -20,19 +20,64 @@ type CleanupFunction<T> = (object: T) => void;
 
 export = tryWith;
 
+/**
+ * Invokes `action`, passing `object` as an argument.
+ * After `action` is finished (whether successfully or by an error being thrown), if `object` has a "dispose" property
+ * and it's a function, then `object.dispose` will be called. Otherwise, if `object` has a "close" property and it's a
+ * function, then `object.close` will be called.
+ * If `object` has neither of the above two properties then no cleanup logic will be performed.
+ *
+ * If `action` has thrown an error, it will continue propagating after any cleanup logic is done.
+ *
+ * Note: If an error is thrown by the cleanup logic the error from `action` will be lost.
+ *
+ * @param {T} object An object that will be passed to `object` and on which cleanup will be performed.
+ * @param {Action<T extends Disposable | Closeable>} action A function that could throw an error and should thus be
+ * called in a cleanup-guaranteed context.
+ */
 function tryWith<T extends Disposable | Closeable>(object: T, action: Action<T>): void;
 
+/**
+ * Invokes `action`, passing `object` as an argument.
+ * After `action` is finished (whether successfully or by an error being thrown), if `cleanupFunction` is a function
+ * then it will be invoked and `object` will be passed to it as an argument.
+ *
+ * If `action` has thrown an error, it will continue propagating after any cleanup logic is done.
+ *
+ * Note: If an error is thrown by the cleanup logic the error from `action` will be lost.
+ *
+ * @param {T} object An object that will be passed to `object` and on which cleanup will be performed.
+ * @param {Action<T extends Disposable | Closeable>} action A function that could throw an error and should thus be
+ * called in a cleanup-guaranteed context.
+ * @param {CleanupFunction<T>} cleanupFunction A function that performs cleanup logic.
+ */
 function tryWith<T>(object: T, action: Action<T>, cleanupFunction: CleanupFunction<T>): void;
 
+/**
+ * Invokes `action`, passing `object` as an argument.
+ * After `action` is finished (whether successfully or by an error being thrown), if `object` has a property with the
+ * key `cleanupProperty` and it's a function, then it will be invoked with `object` being passed to it as `this`.
+ *
+ * If `action` has thrown an error, it will continue propagating after any cleanup logic is done.
+ *
+ * Note: If an error is thrown by the cleanup logic the error from `action` will be lost.
+ *
+ * @param {T} object An object that will be passed to `object` and on which cleanup will be performed.
+ * @param {Action<T extends Disposable | Closeable>} action A function that could throw an error and should thus be
+ * called in a cleanup-guaranteed context.
+ * @param {string | symbol} cleanupProperty
+ */
 function tryWith<T>(object: T, action: Action<T>, cleanupProperty: string | symbol): void;
 
-function tryWith<T>(object: T, action: Action<T>, cleanupFnOrMethodName?: any): void {
+function tryWith<T>(object: T, action: Action<T>, cleanupFnOrMethodName?: CleanupFunction<T> | string | symbol): void {
 	try {
 		action(object);
 	} finally {
-		// todo: separate arguments.length < 3 and >= 3 into separate functions that resolve the cleanup
-		const cleanup = resolveCleanup(object, cleanupFnOrMethodName, arguments.length < 3);
-		performCleanup(object, cleanup);
+		if (arguments.length < 3) {
+			callBuiltInCleanup(object);
+		} else {
+			callCustomCleanup(object, cleanupFnOrMethodName);
+		}
 	}
 }
 
@@ -40,49 +85,23 @@ function tryWith<T>(object: T, action: Action<T>, cleanupFnOrMethodName?: any): 
 /// Helpers
 ///////////////////////////////////////////////////////////
 
-function findBuiltInCleanupMethodName(object: any): 'dispose' | 'close' | null {
+function callBuiltInCleanup(object: any): void {
+	if (object == null) {
+		return;
+	}
 	if (typeof object.dispose === 'function') {
-		return 'dispose';
+		object.dispose();
+	} else if (typeof object.close === 'function') {
+		object.close();
 	}
-	if (typeof object.close === 'function') {
-		return 'close';
-	}
-	return null;
 }
 
-function resolveCleanup(obj: any, cleanupFnOrMethodName: any, tryResolveProperty: boolean): CleanupFunction<any> | string | symbol | null {
-	if (obj === null || obj === void 0) {
-		return null;
-	}
-
-	const type = typeof cleanupFnOrMethodName;
-
-	if (type === 'function') {
-		return cleanupFnOrMethodName;
-	}
-
-	if (cleanupFnOrMethodName !== void 0) {
-		if (type === 'symbol') {
-			return cleanupFnOrMethodName;
-		}
-		if (type === 'string') {
-			return cleanupFnOrMethodName;
-		}
-	}
-
-	if (tryResolveProperty) {
-		return findBuiltInCleanupMethodName(obj);
-	}
-
-	return null;
-}
-
-function performCleanup<T>(object: T, cleanupFnOrMethodName: CleanupFunction<T> | string | symbol | null): void {
+function callCustomCleanup<T>(object: T, cleanupFnOrMethodName: CleanupFunction<T> | string | symbol | undefined): void {
 	switch (typeof cleanupFnOrMethodName) {
-		case 'symbol':
 		case 'string':
-			if (typeof object[cleanupFnOrMethodName as any] === 'function') {
-				object[cleanupFnOrMethodName as any]();
+		case 'symbol':
+			if (object != null && typeof object[cleanupFnOrMethodName as string | symbol] === 'function') {
+				object[cleanupFnOrMethodName as string | symbol]();
 			}
 			break;
 		case 'function':
