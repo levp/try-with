@@ -5,7 +5,15 @@
 **A utility for safe and convenient handling of managed resources in JavasScript.**
 
 The purpose of this utility is to provide a convenient and safe way of using resources that must be manually released, such as remote connections and file handlers.  
-Similar concepts - [try-with-resource](https://docs.oracle.com/javase/tutorial/essential/exceptions/tryResourceClose.html) in Java, [using statement](https://docs.microsoft.com/en-us/dotnet/csharp/language-reference/keywords/using-statement) in C#. 
+
+Similar concepts:
+* [try-with-resource](https://docs.oracle.com/javase/tutorial/essential/exceptions/tryResourceClose.html) in Java
+* [using statement](https://docs.microsoft.com/en-us/dotnet/csharp/language-reference/keywords/using-statement) in C#. 
+
+## Installing
+
+npm: `npm i try-with`  
+yarn: `yarn add try-with`
 
 ## Example
 
@@ -13,7 +21,9 @@ A potential resource leak due to stream not being closed:
 
 ```js
 const stream = fs.createWriteStream(filePath);
-stream.write(data); // will thrown an error if data is incorrect value, e.g. null
+// Next line will throw if `data` is not one of the allowed types.
+stream.write(data);
+// Will never be called if previous line threw and someone caught the error.
 stream.close();
 ```
 
@@ -31,6 +41,8 @@ try {
 Functionally equivalent to the code above but using `try-with`:
 
 ```js
+const tryWith = require('try-with');
+
 tryWith(fs.createWriteStream(filePath), stream => {
   stream.write(data);
 });
