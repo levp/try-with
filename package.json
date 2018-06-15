@@ -1,6 +1,7 @@
 {
   "private": true,
   "name": "try-with",
+  "main": "./try-with.js",
   "version": "0.1.6",
   "author": "Levi Perelman",
   "license": "ISC",
